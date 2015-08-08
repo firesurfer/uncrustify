@@ -73,9 +73,8 @@ else()
 
   add_custom_command(
     OUTPUT "${CMAKE_CURRENT_SOURCE_DIR}/win32/${build_type}/Uncrustify.exe"
-    COMMAND "devenv" "/upgrade" "${CMAKE_CURRENT_SOURCE_DIR}/win32/Uncrustify_Win32_2011.sln"
     COMMAND
-      "msbuild" "${CMAKE_CURRENT_SOURCE_DIR}/win32/Uncrustify_Win32_2011.sln"
+      "msbuild" "${CMAKE_CURRENT_SOURCE_DIR}/win32/Uncrustify_Win32_2015.sln"
       "/p:Configuration=${build_type}" "/p:Platform=Win32"
     WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
     DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/uncrustify_version.h"
