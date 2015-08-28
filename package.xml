@@ -10,7 +10,9 @@
 
   <url>https://github.com/bengardner/uncrustify</url>
 
+  <build_depend>ament_cmake_core</build_depend>
+
   <export>
-    <build_type>cmake</build_type>
+    <build_type>ament_cmake</build_type>
   </export>
 </package>
