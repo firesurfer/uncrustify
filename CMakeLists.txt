@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 2.8.3)
 
 project(uncrustify)
 
+find_package(ament_cmake_core REQUIRED)
+
 include(ExternalProject)
 
 if(NOT WIN32)
@@ -90,3 +92,6 @@ else()
     DESTINATION bin
   )
 endif()
+
+# this ensures that the package has an environment hook setting the PATH
+ament_package()
