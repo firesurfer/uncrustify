@@ -63,8 +63,8 @@ if(NOT WIN32)
 
 else()
   set(build_type "${CMAKE_BUILD_TYPE}")
-  if("${build_type} " STREQUAL " ")
-    set(build_type "Debug")
+  if(NOT "${build_type} " STREQUAL "Debug ")
+    set(build_type "Release")
   endif()
 
   add_custom_command(
