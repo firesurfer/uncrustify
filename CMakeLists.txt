@@ -1,97 +1,243 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 2.8)
 
 project(uncrustify)
 
 find_package(ament_cmake_core REQUIRED)
 
-include(ExternalProject)
+include(CheckCXXCompilerFlag)
+include(CheckIncludeFileCXX)
+include(CheckSymbolExists)
+include(CheckCXXSymbolExists)
+include(CheckTypeSize)
+include(CTest)
 
-if(NOT WIN32)
-  set(uncrustify_source_dir "${CMAKE_CURRENT_BINARY_DIR}/external_project/src/uncrustify")
-
-  # create non-empty source folder in binary directory
-  # otherwise the external projects fails since it does not have a download command
-  file(MAKE_DIRECTORY "${uncrustify_source_dir}")
-  file(WRITE "${uncrustify_source_dir}/non-empty-folder")
-
-  # add a standard autotools external project
-  ExternalProject_Add(
-    uncrustify
-    PREFIX "${CMAKE_CURRENT_BINARY_DIR}/external_project"
-    CONFIGURE_COMMAND "${uncrustify_source_dir}/configure"
-      "--prefix" "${CMAKE_CURRENT_BINARY_DIR}/external_project"
-    BUILD_COMMAND "make"
-    BUILD_IN_SOURCE 1
-    INSTALL_COMMAND "echo" "Skipping install step of external project"
+#
+# Check compiler flags
+#
+if(MSVC)
+  add_definitions(/D_CRT_SECURE_NO_WARNINGS /D_CRT_NONSTDC_NO_WARNINGS /wd4267)
+elseif(CMAKE_COMPILER_IS_GNUCXX)
+  set(gcc_warning_flags
+    -Wall
+    -Wextra
+    -Wshadow
+    -Wpointer-arith
+    -Wcast-qual
+    -Wcast-align
   )
-
-  # always copy the necessary source files of uncrustify to the build directory
-  # since the upstream build scripts can't handle symlinked folders correctly
-  set(copy_commands "")
-  file(GLOB_RECURSE source_files RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}"
-    "${CMAKE_CURRENT_SOURCE_DIR}/configure"
-    "${CMAKE_CURRENT_SOURCE_DIR}/etc/*.cfg"
-    "${CMAKE_CURRENT_SOURCE_DIR}/install-sh"
-    "${CMAKE_CURRENT_SOURCE_DIR}/make_token_names.sh"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Makefile.in"
-    "${CMAKE_CURRENT_SOURCE_DIR}/man/uncrustify.1.in"
-    "${CMAKE_CURRENT_SOURCE_DIR}/missing"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/*"
-  )
-  foreach(source_file ${source_files})
-    # copy every file only when changed which will avoid recompilation if nothing changed
-    list (APPEND copy_commands
-      COMMAND
-        ${CMAKE_COMMAND} -E copy_if_different
-          "${CMAKE_CURRENT_SOURCE_DIR}/${source_file}"
-          "${uncrustify_source_dir}/${source_file}")
+  foreach(flag ${gcc_warning_flags})
+    string(REGEX REPLACE "[^a-zA-Z0-9]+" "_" flag_var "CXXFLAG_${flag}")
+    CHECK_CXX_COMPILER_FLAG("${flag}" ${flag_var})
+    if(${flag_var})
+      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${flag}")
+    endif()
+    unset(flag_var)
   endforeach()
-  ExternalProject_Add_Step(uncrustify copy_source
-    # it must happen before the configure step
-    DEPENDERS configure
-    COMMENT "Copy source files to '${uncrustify_source_dir}'"
-    # it must happen every time to ensure that changes propagate
-    # even if that retriggers configure everytime
-    ALWAYS 1
-    ${copy_commands}
-  )
+  unset(gcc_warning_flags)
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
+endif()
 
-  install(
-    PROGRAMS "${uncrustify_source_dir}/src/uncrustify"
-    DESTINATION bin
-  )
+include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
+#
+# Determine config
+#
+if(WIN32)
+  # Windows builds use win32/windows_compat.h instead of config.h
+  include_directories(${PROJECT_SOURCE_DIR}/win32)
 else()
-  set(build_type "${CMAKE_BUILD_TYPE}")
-  if(NOT "${build_type} " STREQUAL "Debug ")
-    set(build_type "Release")
+  # Generate CMake config.h.in
+  file(READ src/config.h.in config_lines)
+  string(REPLACE "#undef" "#cmakedefine" config_lines "${config_lines}")
+  file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/config.h.in ${config_lines})
+
+  unset(config_lines)
+
+  # Generate config.h
+  set(avail_headers "")
+
+  set(headers
+    inttypes.h
+    memory.h
+    stdint.h
+    stdlib.h
+    strings.h
+    string.h
+    sys/stat.h
+    sys/types.h
+    unistd.h
+    utime.h
+  )
+  foreach(header ${headers})
+    string(TOUPPER "${header}" header_uc)
+    string(REGEX REPLACE "[^A-Z0-9_]" "_" include_var "HAVE_${header_uc}")
+    check_include_file_cxx("${header}" ${include_var})
+    if(${include_var})
+      list(APPEND avail_headers ${header})
+    endif()
+    unset(include_var)
+    unset(header_uc)
+  endforeach()
+  unset(headers)
+
+  check_include_file("stdbool.h" HAVE_STDBOOL_H)
+
+  set(symbols
+    memset
+    strcasecmp
+    strchr
+    strdup
+    strerror
+    strtol
+    strtoul
+  )
+  foreach(symbol ${symbols})
+    string(TOUPPER "${symbol}" symbol_uc)
+    string(REGEX REPLACE "[^A-Z0-9_]" "_" symbol_var "HAVE_${symbol_uc}")
+    check_cxx_symbol_exists("${symbol}" "${avail_headers}" ${symbol_var})
+    unset(symbol_var)
+    unset(symbol_uc)
+  endforeach()
+  unset(symbols)
+
+  unset(avail_headers)
+
+  check_type_size(_Bool _BOOL LANGUAGE C)
+
+  configure_file(${CMAKE_CURRENT_BINARY_DIR}/config.h.in config.h @ONLY)
+endif()
+
+#
+# Generate uncrustify_version.h
+#
+file(STRINGS configure.ac PACKAGE_VERSION REGEX "^AC_INIT")
+
+if(${PACKAGE_VERSION} MATCHES "^AC_INIT\\(uncrustify,([^,]+),")
+  set(PACKAGE_VERSION "${CMAKE_MATCH_1}")
+  message(STATUS "PACKAGE_VERSION: ${PACKAGE_VERSION}")
+else()
+  message(FATAL_ERROR "Unable to determine PACKAGE_VERSION")
+endif()
+
+configure_file(src/uncrustify_version.h.in uncrustify_version.h @ONLY)
+
+#
+# Generate token_names.h
+#
+set(tokens "")
+
+file(READ src/token_enum.h token_lines)
+string(REGEX REPLACE ";|\\[|\\]" " " token_lines "${token_lines}")
+string(REPLACE "\n" ";" token_lines "${token_lines}")
+
+foreach(token_line ${token_lines})
+  if(${token_line} MATCHES "^[ \t]*CT_([A-Z0-9_]+),.*$")
+    list(APPEND tokens "   \"${CMAKE_MATCH_1}\",\n")
   endif()
+endforeach()
 
-  add_custom_command(
-    OUTPUT "${CMAKE_CURRENT_SOURCE_DIR}/src/uncrustify_version.h"
-    COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/scripts/create_uncrustify_version_header.bat"
-    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/scripts"
-  )
+file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/token_names.h
+  "/*\n"
+  " * Generated by CMake\n"
+  " */\n"
+  "#ifndef TOKEN_NAMES_H_INCLUDED\n"
+  "#define TOKEN_NAMES_H_INCLUDED\n"
+  "\n"
+  "const char *token_names[] =\n"
+  "{\n"
+  ${tokens}
+  "};\n"
+  "\n"
+  "#endif /* TOKEN_NAMES_H_INCLUDED */\n"
+)
 
-  add_custom_command(
-    OUTPUT "${CMAKE_CURRENT_SOURCE_DIR}/win32/${build_type}/Uncrustify.exe"
-    COMMAND
-      "msbuild" "${CMAKE_CURRENT_SOURCE_DIR}/win32/Uncrustify_Win32_2015.sln"
-      "/p:Configuration=${build_type}" "/p:Platform=Win32"
-    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-    DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/uncrustify_version.h"
-  )
+unset(token_lines)
+unset(tokens)
 
-  add_custom_target(
-    external_uncrustify ALL
-    DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/win32/${build_type}/Uncrustify.exe"
-  )
+#
+# Uncrustify
+#
+add_executable(uncrustify
+  src/align.cpp
+  src/align_stack.cpp
+  src/args.cpp
+  src/backup.cpp
+  src/braces.cpp
+  src/brace_cleanup.cpp
+  src/ChunkStack.cpp
+  src/chunk_list.cpp
+  src/combine.cpp
+  src/compat_posix.cpp
+  src/compat_win32.cpp
+  src/defines.cpp
+  src/detect.cpp
+  src/indent.cpp
+  src/keywords.cpp
+  src/lang_pawn.cpp
+  src/logger.cpp
+  src/logmask.cpp
+  src/md5.cpp
+  src/newlines.cpp
+  src/options.cpp
+  src/options_for_QT.cpp
+  src/output.cpp
+  src/parens.cpp
+  src/parse_frame.cpp
+  src/punctuators.cpp
+  src/semicolons.cpp
+  src/sorting.cpp
+  src/space.cpp
+  src/tokenize.cpp
+  src/tokenize_cleanup.cpp
+  src/uncrustify.cpp
+  src/unc_text.cpp
+  src/unc_tools.cpp
+  src/unicode.cpp
+  src/universalindentgui.cpp
+  src/width.cpp
+  src/align_stack.h
+  src/args.h
+  src/backup.h
+  src/base_types.h
+  src/char_table.h
+  src/ChunkStack.h
+  src/chunk_list.h
+  src/ListManager.h
+  src/logger.h
+  src/logmask.h
+  src/log_levels.h
+  src/md5.h
+  src/options.h
+  src/options_for_QT.h
+  src/prototypes.h
+  src/punctuators.h
+  src/token_enum.h
+  src/uncrustify_types.h
+  src/unc_ctype.h
+  src/unc_text.h
+  src/unc_tools.h
+)
 
-  install(
-    PROGRAMS "${CMAKE_CURRENT_SOURCE_DIR}/win32/${build_type}/Uncrustify.exe"
-    DESTINATION bin
+#
+# Tests
+#
+if(BUILD_TESTING)
+  find_package(PythonInterp REQUIRED)
+  enable_testing()
+  add_test(NAME test_uncrustify
+    COMMAND ${PYTHON_EXECUTABLE}
+      "${PROJECT_SOURCE_DIR}/tests/run_tests.py" "--exe=$<TARGET_FILE:uncrustify>"
+    WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests/"
   )
 endif()
+
+#
+# Install
+#
+install(TARGETS uncrustify
+  RUNTIME DESTINATION bin
+)
 
 # this ensures that the package has an environment hook setting the PATH
 ament_package()
