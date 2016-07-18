@@ -145,7 +145,7 @@ enum uncrustify_options
    UO_indent_braces_no_struct,    // whether to not indent the struct braces (depends on UO_indent_braces)
    UO_indent_brace_parent,        // indent the braces based on the parent size (if=3, for=4, etc)
    UO_indent_paren_open_brace,    // indent on paren level in '({', default by {
-   U0_indent_cs_delegate_brace,   // indent a C# delegate by another level. default: false
+   UO_indent_cs_delegate_brace,   // indent a C# delegate by another level. default: false
    UO_indent_label,               // 0=left >0=col from left, <0=sub from brace indent
    UO_indent_access_spec,         // same as indent_label, but for 'private:', 'public:'
    UO_indent_access_spec_body,    // indent private/public/protected inside a class (overrides indent_access_spec)
@@ -203,6 +203,7 @@ enum uncrustify_options
 
    UO_indent_min_vbrace_open,        // min. indent after virtual brace open and newline
    UO_indent_vbrace_open_on_tabstop, // when identing after virtual brace open and newline add further spaces to reach next tabstop
+   UO_indent_token_after_brace,
 
    /*
     * Misc inter-element spacing
@@ -406,6 +407,7 @@ enum uncrustify_options
    UO_sp_after_for_colon,
    UO_sp_before_for_colon,
    UO_sp_extern_paren,
+   UO_sp_skip_vbrace_tokens,
 
    /*
     * Line splitting options (for long lines)

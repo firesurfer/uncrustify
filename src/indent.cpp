@@ -1017,7 +1017,7 @@ void indent_text(void)
          frm.level++;
          indent_pse_push(frm, pc);
 
-         if (cpd.settings[U0_indent_cs_delegate_brace].b &&
+         if (cpd.settings[UO_indent_cs_delegate_brace].b &&
              (pc->type == CT_BRACE_OPEN) &&
              (pc->prev->type == CT_LAMBDA || pc->prev->prev->type == CT_LAMBDA))
          {
@@ -1215,7 +1215,9 @@ void indent_text(void)
             next = chunk_get_next_ncnl(pc);
             if (!chunk_is_newline_between(pc, next))
             {
-               frm.pse[frm.pse_tos].indent = next->column;
+                if (cpd.settings[UO_indent_token_after_brace].b) {
+                    frm.pse[frm.pse_tos].indent = next->column;
+                }
             }
             frm.pse[frm.pse_tos].indent_tmp = frm.pse[frm.pse_tos].indent;
             frm.pse[frm.pse_tos].open_line  = pc->orig_line;
