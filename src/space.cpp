@@ -191,7 +191,9 @@ static argval_t do_space(chunk_t *first, chunk_t *second, int& min_sp, bool comp
       return(cpd.settings[UO_sp_d_array_colon].a);
    }
 
-   if ((first->type == CT_CASE) && CharTable::IsKw1(second->str[0]))
+   if ((first->type == CT_CASE) &&
+       ((CharTable::IsKw1(second->str[0]) ||
+        (second->type == CT_NUMBER))))
    {
       log_rule("sp_case_label");
       return(argval_t(cpd.settings[UO_sp_case_label].a | AV_ADD));
@@ -1804,16 +1806,23 @@ void space_text(void)
          save_set_options_for_QT(pc->level);
       } // guy
         // Bug # 637
-        //next = chunk_get_next(pc);
-        //while (chunk_is_blank(next) && !chunk_is_newline(next))
-        //{
-        //   LOG_FMT(LSPACE, "%s: %d:%d Skip %s (%d+%d)\n", __func__,
-        //           next->orig_line, next->orig_col, get_token_name(next->type),
-        //           pc->column, pc->str.size());
-        //   next->column = pc->column + pc->str.size();
-        //   next         = chunk_get_next(next);
-        //}
-      next = pc->next;
+      if (cpd.settings[UO_sp_skip_vbrace_tokens].b)
+      {
+         next = chunk_get_next(pc);
+         while (chunk_is_blank(next) && !chunk_is_newline(next) &&
+               (next->type == CT_VBRACE_OPEN || next->type == CT_VBRACE_CLOSE))
+         {
+            LOG_FMT(LSPACE, "%s: %d:%d Skip %s (%d+%d)\n", __func__,
+               next->orig_line, next->orig_col, get_token_name(next->type),
+               pc->column, pc->str.size());
+            next->column = pc->column + pc->str.size();
+            next = chunk_get_next(next);
+         }
+      }
+      else
+      {
+         next = pc->next;
+      }
       if (!next)
       {
          break;

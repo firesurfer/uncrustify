@@ -566,6 +566,9 @@ void register_options(void)
    unc_add_option("sp_annotation_paren", UO_sp_annotation_paren, AT_IARF,
                   "Control space between a Java annotation and the open paren.");
 
+   unc_add_option("sp_skip_vbrace_tokens", UO_sp_skip_vbrace_tokens, AT_BOOL,
+                  "If true, vbrace tokens are dropped to the previous token and skipped.");
+
    unc_begin_group(UG_indent, "Indenting");
    unc_add_option("indent_columns", UO_indent_columns, AT_NUM,
                   "The number of columns to indent per level.\n"
@@ -600,7 +603,7 @@ void register_options(void)
                   "Indent based on the size of the brace parent, i.e. 'if' => 3 spaces, 'for' => 4 spaces, etc.");
    unc_add_option("indent_paren_open_brace", UO_indent_paren_open_brace, AT_BOOL,
                   "Indent based on the paren open instead of the brace open in '({\\n', default is to indent by brace.");
-   unc_add_option("indent_cs_delegate_brace", U0_indent_cs_delegate_brace, AT_BOOL,
+   unc_add_option("indent_cs_delegate_brace", UO_indent_cs_delegate_brace, AT_BOOL,
                   "indent a C# delegate by another level, default is to not indent by another level.");
    unc_add_option("indent_namespace", UO_indent_namespace, AT_BOOL,
                   "Whether the 'namespace' body is indented");
@@ -740,6 +743,9 @@ void register_options(void)
    unc_add_option("indent_vbrace_open_on_tabstop", UO_indent_vbrace_open_on_tabstop, AT_BOOL,
                   "TRUE: When identing after virtual brace open and newline add further spaces "
                   "after regular indent to reach next tabstop.");
+   unc_add_option("indent_token_after_brace", UO_indent_token_after_brace, AT_BOOL,
+                  "If true, a brace followed by another token (not a newline) will indent all contained lines to match the token."
+                  "Default=True.");
 
    unc_begin_group(UG_newline, "Newline adding and removing options");
    unc_add_option("nl_collapse_empty_body", UO_nl_collapse_empty_body, AT_BOOL,
@@ -2174,6 +2180,7 @@ void set_option_defaults(void)
    cpd.defaults[UO_indent_oc_msg_prioritize_first_colon].b = true;
    cpd.defaults[UO_use_indent_func_call_param].b           = true;
    cpd.defaults[UO_use_options_overriding_for_qt_macros].b = true;
+   cpd.defaults[UO_indent_token_after_brace].b             = true;
 
    /* copy all the default values to settings array */
    for (int count = 0; count < UO_option_count; count++)
