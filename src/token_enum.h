@@ -18,7 +18,7 @@
  * The script 'make_token_names.sh' creates token_names.h, so be sure to run
  * that after adding or removing an entry.
  */
-typedef enum
+enum c_token_t
 {
    CT_NONE,
    CT_EOF,
@@ -212,7 +212,7 @@ typedef enum
    CT_FUNC_CLASS_PROTO, /* ctor or dtor for a class */
    CT_FUNC_CTOR_VAR,    /* variable or class initialization */
    CT_FUNC_WRAP,        /* macro that wraps the function name */
-   CT_PROTO_WRAP,       /* macro: "RETVAL PROTO_WRAP( fcn_name, (PARAMS))" */
+   CT_PROTO_WRAP,       /* macro: "RETVAL PROTO_WRAP( fcn_name, (PARAMS))". Parens for PARAMS are optional. */
    CT_MACRO_FUNC,       /* function-like macro */
    CT_MACRO,            /* a macro def */
    CT_QUALIFIER,        /* static, const, etc */
@@ -231,6 +231,7 @@ typedef enum
    CT_OC_INTF,          /* ObjC: @interface */
    CT_OC_PROTOCOL,      /* ObjC: @protocol or @protocol() */
    CT_OC_PROTO_LIST,    /* ObjC: protocol list < > (parent token only) */
+   CT_OC_GENERIC_SPEC,  /* ObjC: specification of generic  < > */
    CT_OC_PROPERTY,      /* ObjC: @property */
    CT_OC_CLASS,         /* ObjC: the name after @interface or @implementation */
    CT_OC_CLASS_EXT,     /* ObjC: a pair of empty parens after the class name in a @interface or @implementation */
@@ -254,6 +255,7 @@ typedef enum
    CT_OC_BLOCK_EXPR,    /* ObjC: block expression with arg: '^(int arg) { arg++; };' and without (called a block literal): '^{ ... };' */
    CT_OC_BLOCK_CARET,   /* ObjC: block pointer caret: '^' */
    CT_OC_AT,            /* ObjC: boxed constants using '@' */
+   CT_OC_PROPERTY_ATTR, /* ObjC: property attribute (strong, weak, readonly, etc...) */
 
    /* start PP types */
    CT_PP_DEFINE,        /* #define */
@@ -269,6 +271,7 @@ typedef enum
    CT_PP_FILE,
    CT_PP_LINE,
    CT_PP_SECTION,
+   CT_PP_ASM,           /* start of assembly code section */
    CT_PP_UNDEF,
    CT_PP_PROPERTY,
 
@@ -279,6 +282,7 @@ typedef enum
    CT_PP_ENDREGION,     /* C# #endregion */
    CT_PP_REGION_INDENT, /* Dummy token for indenting a C# #region */
    CT_PP_IF_INDENT,     /* Dummy token for indenting a #if stuff */
+   CT_PP_IGNORE,        /* Dummy token for ignoring a certain preprocessor directive (do not do any processing) */
    CT_PP_OTHER,         /* #line, #error, #pragma, etc */
    /* end PP types */
 
@@ -294,7 +298,7 @@ typedef enum
    CT_TAG,
    CT_TAG_COLON,
 
-   /* C-sharp crap */
+   /* C-sharp */
    CT_LOCK,             /* lock/unlock */
    CT_AS,
    CT_IN,               /* "foreach (T c in x)" or "foo(in char c)" or "in { ..." */
@@ -311,8 +315,8 @@ typedef enum
 
    /* Embedded SQL - always terminated with a semicolon */
    CT_SQL_EXEC,         /* the 'EXEC' in 'EXEC SQL ...' */
-   CT_SQL_BEGIN,        /* the 'EXEC' in 'EXEC SQL BEGIN ...' */
-   CT_SQL_END,          /* the 'EXEC' in 'EXEC SQL END ...' */
+   CT_SQL_BEGIN,        /* the 'BEGINN' in 'EXEC SQL BEGIN ...' */
+   CT_SQL_END,          /* the 'END' in 'EXEC SQL END ...' */
    CT_SQL_WORD,         /* CT_WORDs in the 'EXEC SQL' statement */
 
    /* Vala stuff */
@@ -325,15 +329,7 @@ typedef enum
    CT_FOR_COLON,    /* colon in "for ( TYPE var: EXPR ) { ... }" */
    CT_DOUBLE_BRACE, /* parent for double brace */
 
-   /* MS calling convention */
-   CT_CDECL,        /* guy 2016-01-31 */
-   CT_CLRCALL,      /* guy 2016-01-31 */
-   CT_FASTCALL,     /* guy 2016-01-31 */
-   CT_STDCALL,      /* __stdcall Bug # 633 guy 2015-11-19 */
-   CT_THISCALL,     /* guy 2016-01-31 */
-   CT_VECTORCALL,   /* guy 2016-01-31 */
-
-   /* extentions for Qt macros */
+   /* extensions for Qt macros */
    CT_Q_EMIT,       // guy 2015-10-16
    CT_Q_FOREACH,    // guy 2015-09-23
    CT_Q_FOREVER,    // guy 2015-10-18
@@ -348,6 +344,8 @@ typedef enum
    CT_SI,           // guy 2016-03-11
    CT_NOTHROW,      // guy 2016-03-11
    CT_WORD_,        // guy 2016-03-11
-} c_token_t;
+
+   CT_TOKEN_COUNT_  // NOTE: Keep this the last entry because it's used as a counter.
+};
 
 #endif /* TOKEN_ENUM_H_INCLUDED */

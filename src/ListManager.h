@@ -7,6 +7,9 @@
  * @license GPL v2+
  */
 
+#ifndef LIST_MANAGER_H_INCLUDED
+#define LIST_MANAGER_H_INCLUDED
+
 /**
  * A simple list manager for a double-linked list.
  * Class T must define 'next' and 'prev', which must be pointers to type T.
@@ -23,7 +26,7 @@ protected:
 
 private:
    /* Hide copy constructor */
-   ListManager(const ListManager& ref)
+   ListManager(const ListManager &ref)
    {
       first = NULL;
       last  = NULL;
@@ -199,3 +202,5 @@ public:
       first = obj;
    }
 };
+
+#endif /* LIST_MANAGER_H_INCLUDED */

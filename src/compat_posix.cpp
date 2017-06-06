@@ -11,7 +11,7 @@
 #include <string>
 
 
-bool unc_getenv(const char *name, std::string& str)
+bool unc_getenv(const char *name, std::string &str)
 {
    const char *val = getenv(name);
 
@@ -24,13 +24,9 @@ bool unc_getenv(const char *name, std::string& str)
 }
 
 
-bool unc_homedir(std::string& home)
+bool unc_homedir(std::string &home)
 {
-   if (unc_getenv("HOME", home))
-   {
-      return(true);
-   }
-   return(false);
+   return(unc_getenv("HOME", home));
 }
 
 #endif /* ifndef WIN32 */
