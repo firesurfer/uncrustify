@@ -46,6 +46,8 @@
 
 30045 nl_func_decl_1.cfg               cpp/nl_func_decl.cpp
 30046 nl_func_decl_2.cfg               cpp/nl_func_decl.cpp
+30047 nl_func_paren_empty.cfg          cpp/nl_func_paren_empty.cpp
+30048 nl_func_def_paren_empty.cfg      cpp/nl_func_def_paren_empty.cpp
 
 30050 nl_namespace-r.cfg               cpp/nl-namespace.h
 30051 nl_namespace-a.cfg               cpp/nl-namespace.h
@@ -104,6 +106,7 @@
 30206 empty.cfg                        cpp/cmt_backslash_eol.cpp
 30207 cmt_indent_pp.cfg                cpp/cmt_indent_pp.h
 30208 bug_1108.cfg                     cpp/bug_1108.cpp
+30209 empty.cfg                        cpp/bug_1134.cpp
 
 30250 align_fcall.cfg                  cpp/align_fcall.cpp
 30251 align_fcall-2.cfg                cpp/align_fcall.cpp
@@ -178,8 +181,14 @@
 30815 width-2.cfg                      cpp/cmt-reflow.cpp
 30816 cu.cfg                           cpp/for_long.cpp
 30817 ben.cfg                          cpp/cmt-cpp-cont.cpp
+30818 bug_1169.cfg                     cpp/bug_1169.cpp
 
 30820 pp_define_at_level-1.cfg         cpp/pp-define-indent.cpp
+30821 pp_indent_case.cfg               cpp/pp_indent_case.cpp
+30822 pp_indent_brace.cfg              cpp/pp_indent_brace.cpp
+30823 pp_indent_func_def.cfg           cpp/pp_indent_func_def.cpp
+30824 pp_indent_extern.cfg             cpp/pp_indent_extern.cpp
+
 
 30830 kw_subst2.cfg                    cpp/kw_subst.cpp
 30831 kw_subst.cfg                     cpp/kw_subst2.cpp
@@ -209,6 +218,7 @@
 30911 indent_namespace-f.cfg           cpp/indent_namespace.h
 30912 long_namespace.cfg               cpp/long_namespace.cpp
 30913 indent_namespace-t.cfg           cpp/indent_namespace2.h
+30914 indent_namespace_single_indent.cfg cpp/indent_namespace_single_indent.h
 
 30920 ben.cfg                          cpp/indent-off.cpp
 30921 ben.cfg                          cpp/variadic-template.h
@@ -227,6 +237,7 @@
 30935 ben.cfg                          cpp/indent-misc.cpp
 30936 indent_braces_no.cfg             cpp/indent_braces_no.h
 30937 indent_param.cfg                 cpp/indent_param.cpp
+30938 indent_switch_pp.cfg             cpp/indent_switch_pp.cpp
 
 30940 mod_case_brace_rm.cfg            cpp/case-brace-remove.cpp
 
@@ -438,3 +449,7 @@
 34171  i1181.cfg                       cpp/i1181.cpp
 
 34190 bug_1003.cfg                     cpp/bug_1003.cpp
+
+34191 empty.cfg                        cpp/comment-align-multiline.cpp
+34192  mod_remove_extra_semicolon-t.cfg    cpp/i1207.cpp
+34193  code_width-25.cfg               cpp/i1218.cpp

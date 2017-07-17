@@ -17,7 +17,7 @@
 #include "defines.h"
 #include <cstring>
 #ifdef HAVE_STRINGS_H
-#include <strings.h>  /* strcasecmp() */
+#include <strings.h>  // strcasecmp()
 #endif
 #include <cstdio>
 #include <cstdlib>
@@ -81,26 +81,34 @@ static const char *DOC_TEXT_END = R"___(
 
 map<uncrustify_options, option_map_value> option_name_map;
 map<uncrustify_groups, group_map_value>   group_map;
-static uncrustify_groups                  current_group;
+static uncrustify_groups                  current_group; //defines the currently active options group
 #ifdef DEBUG
 static int                                checkGroupNumber  = -1;
 static int                                checkOptionNumber = -1;
 #endif // DEBUG
 
-const char *get_argtype_name(argtype_e argtype);
 
-/**
- *  only compare alpha-numeric characters
- */
+//!  only compare alpha-numeric characters
 static bool match_text(const char *str1, const char *str2);
 
 
-/**
- * Convert the value string to the correct type in dest.
- */
+//! Convert the value string to the correct type in dest.
 static void convert_value(const option_map_value *entry, const char *val, op_val_t *dest);
 
 
+/**
+ * @brief adds an uncrustify option to the global option list
+ *
+ * The option group is taken from the global 'current_group' variable
+ *
+ * @param name        name of the option, maximal 60 characters
+ * @param id          ENUM value of the option
+ * @param type        kind of option r.g. AT_IARF, AT_NUM, etc.
+ * @param short_desc  short human readable description
+ * @param long_desc   long  human readable description
+ * @param min_val     minimal value, only used for integer values
+ * @param max_val     maximal value, only used for integer values
+ */
 static void unc_add_option(const char *name, uncrustify_options id, argtype_e type, const char *short_desc = nullptr, const char *long_desc = nullptr, int min_val = 0, int max_val = 16);
 
 
@@ -108,10 +116,12 @@ void unc_begin_group(uncrustify_groups id, const char *short_desc,
                      const char *long_desc)
 {
 #ifdef DEBUG
-   // The order of the calls of 'unc_begin_group' in the function 'register_options'
-   // is the master over all.
-   // This order must be the same in the declaration of the enum uncrustify_groups
-   // This will be checked here
+   /*
+    * The order of the calls of 'unc_begin_group' in the function
+    * 'register_options' is the master over all.
+    * This order must be the same in the declaration of the enum uncrustify_groups
+    * This will be checked here
+    */
    checkGroupNumber++;
    if (checkGroupNumber != id)
    {
@@ -136,9 +146,9 @@ void unc_begin_group(uncrustify_groups id, const char *short_desc,
 }
 
 
-void unc_add_option(const char *name, uncrustify_options id, argtype_e type,
-                    const char *short_desc, const char *long_desc,
-                    int min_val, int max_val)
+static void unc_add_option(const char *name, uncrustify_options id, argtype_e type,
+                           const char *short_desc, const char *long_desc,
+                           int min_val, int max_val)
 {
 #ifdef DEBUG
    // The order of the calls of 'unc_add_option' in the function 'register_options'
@@ -178,7 +188,7 @@ void unc_add_option(const char *name, uncrustify_options id, argtype_e type,
    value.long_desc  = long_desc;
    value.min_val    = 0;
 
-   /* Calculate the max/min values */
+   // Calculate the max/min values
    switch (type)
    {
    case AT_BOOL:
@@ -211,8 +221,12 @@ void unc_add_option(const char *name, uncrustify_options id, argtype_e type,
       value.max_val = 0;
       break;
 
+   case AT_TFI:
+      value.max_val = 2;
+      break;
+
    default:
-      fprintf(stderr, "FATAL: Illegal option type %d for '%s'\n", type, name);
+      fprintf(stderr, "FATAL: %s(%d): Illegal option type %d for '%s'\n", __func__, __LINE__, type, name);
       log_flush(true);
       exit(EX_SOFTWARE);
    }
@@ -225,7 +239,7 @@ static bool match_text(const char *str1, const char *str2)
 {
    int matches = 0;
 
-   while ((*str1 != 0) && (*str2 != 0))
+   while (*str1 != 0 && *str2 != 0)
    {
       if (!unc_isalnum(*str1))
       {
@@ -245,7 +259,9 @@ static bool match_text(const char *str1, const char *str2)
       str1++;
       str2++;
    }
-   return(matches && (*str1 == 0) && (*str2 == 0));
+   return(  matches
+         && (*str1 == 0)
+         && (*str2 == 0));
 }
 
 
@@ -806,6 +822,8 @@ void register_options(void)
    unc_add_option("indent_switch_case", UO_indent_switch_case, AT_UNUM,
                   "Spaces to indent 'case' from 'switch'\n"
                   "Usually 0 or indent_columns.");
+   unc_add_option("indent_switch_pp", UO_indent_switch_pp, AT_BOOL,
+                  "Whether to indent preproccesor statements inside of switch statements");
    unc_add_option("indent_case_shift", UO_indent_case_shift, AT_UNUM,
                   "Spaces to shift the 'case' line, without affecting any other lines\n"
                   "Usually 0.");
@@ -1060,8 +1078,12 @@ void register_options(void)
                   "Add or remove newline between return type and function name in a prototype");
    unc_add_option("nl_func_paren", UO_nl_func_paren, AT_IARF,
                   "Add or remove newline between a function name and the opening '(' in the declaration");
+   unc_add_option("nl_func_paren_empty", UO_nl_func_paren_empty, AT_IARF,
+                  "Overrides nl_func_paren for functions with no parameters");
    unc_add_option("nl_func_def_paren", UO_nl_func_def_paren, AT_IARF,
                   "Add or remove newline between a function name and the opening '(' in the definition");
+   unc_add_option("nl_func_def_paren_empty", UO_nl_func_def_paren_empty, AT_IARF,
+                  "Overrides nl_func_def_paren for functions with no parameters");
    unc_add_option("nl_func_decl_start", UO_nl_func_decl_start, AT_IARF,
                   "Add or remove newline after '(' in a function declaration");
    unc_add_option("nl_func_def_start", UO_nl_func_def_start, AT_IARF,
@@ -1205,13 +1227,13 @@ void register_options(void)
                   "'while (i<5)\\n foo(i++);' => 'while (i<5) foo(i++);'");
    unc_add_option("nl_split_if_one_liner", UO_nl_split_if_one_liner, AT_BOOL,
                   " Change a one-liner if statement into simple unbraced if\n"
-                  "'if(b) i++;' => 'if(b) i++;'");
+                  "'if(b) i++;' => 'if(b)\\n i++;'");
    unc_add_option("nl_split_for_one_liner", UO_nl_split_for_one_liner, AT_BOOL,
                   "Change a one-liner for statement into simple unbraced for\n"
-                  "'for (i=0;<5;i++) foo(i);' => 'for (i=0;<5;i++) foo(i);'");
+                  "'for (i=0;<5;i++) foo(i);' => 'for (i=0;<5;i++)\\n foo(i);'");
    unc_add_option("nl_split_while_one_liner", UO_nl_split_while_one_liner, AT_BOOL,
-                  "Change simple unbraced while statements into a one-liner while\n"
-                  "'while (i<5)\\n foo(i++);' => 'while (i<5) foo(i++);'");
+                  "Change a one-liner while statement into simple unbraced while\n"
+                  "'while (i<5) foo(i++);' => 'while (i<5)\\n foo(i++);'");
 
    unc_begin_group(UG_blankline, "Blank line options", "Note that it takes 2 newlines to get a blank line");
    unc_add_option("nl_max", UO_nl_max, AT_UNUM,
@@ -1645,6 +1667,18 @@ void register_options(void)
                   "Whether to indent '#define' at the brace level (True) or from column 1 (false)");
    unc_add_option("pp_ignore_define_body", UO_pp_ignore_define_body, AT_BOOL,
                   "Whether to ignore the '#define' body while formatting.");
+   unc_add_option("pp_indent_case", UO_pp_indent_case, AT_BOOL,
+                  "Whether to indent case statements between #if, #else, and #endif.\n"
+                  "Only applies to the indent of the preprocesser that the case statements directly inside of");
+   unc_add_option("pp_indent_func_def", UO_pp_indent_func_def, AT_BOOL,
+                  "Whether to indent whole function definitions between #if, #else, and #endif.\n"
+                  "Only applies to the indent of the preprocesser that the function definition is directly inside of");
+   unc_add_option("pp_indent_extern", UO_pp_indent_extern, AT_BOOL,
+                  "Whether to indent extern C blocks between #if, #else, and #endif.\n"
+                  "Only applies to the indent of the preprocesser that the extern block is directly inside of");
+   unc_add_option("pp_indent_brace", UO_pp_indent_brace, AT_BOOL,
+                  "Whether to indent braces directly inside #if, #else, and #endif.\n"
+                  "Only applies to the indent of the preprocesser that the braces are directly inside of");
 
    unc_begin_group(UG_sort_includes, "Sort includes options");
    unc_add_option("include_category_0", UO_include_category_0, AT_STRING,
@@ -1720,7 +1754,7 @@ static void convert_value(const option_map_value *entry, const char *val, op_val
       }
       if (strcasecmp(val, "AUTO") != 0)
       {
-         fprintf(stderr, "%s:%d Expected AUTO, LF, CRLF, or CR for %s, got %s\n",
+         fprintf(stderr, "convert_value: %s:%d Expected 'Auto', 'LF', 'CRLF', or 'CR' for %s, got '%s'\n",
                  cpd.filename, cpd.line_number, entry->name, val);
          log_flush(true);
          cpd.error_count++;
@@ -1768,8 +1802,8 @@ static void convert_value(const option_map_value *entry, const char *val, op_val
       }
       if (strcasecmp(val, "IGNORE") != 0)
       {
-         fprintf(stderr, "%s:%d Expected IGNORE, JOIN, LEAD, LEAD_BREAK, LEAD_FORCE, "
-                 "TRAIL, TRAIL_BREAK, TRAIL_FORCE for %s, got %s\n",
+         fprintf(stderr, "convert_value: %s:%d Expected 'Ignore', 'Join', 'Lead', 'Lead_Brake', "
+                 "'Lead_Force', 'Trail', 'Trail_Break', 'Trail_Force' for %s, got '%s'\n",
                  cpd.filename, cpd.line_number, entry->name, val);
          log_flush(true);
          cpd.error_count++;
@@ -1779,24 +1813,31 @@ static void convert_value(const option_map_value *entry, const char *val, op_val
    }
 
    const option_map_value *tmp;
-   if ((entry->type == AT_NUM) || (entry->type == AT_UNUM))
+   if (entry->type == AT_NUM || entry->type == AT_UNUM)
    {
-      if (unc_isdigit(*val)
-          || (unc_isdigit(val[1]) && ((*val == '-') || (*val == '+'))))
+      if (  unc_isdigit(*val)
+         || (  unc_isdigit(val[1])
+            && ((*val == '-') || (*val == '+'))))
       {
-         if ((entry->type == AT_UNUM) && (*val == '-'))
+         if (entry->type == AT_UNUM && (*val == '-'))
          {
             fprintf(stderr, "%s:%d\n  for the option '%s' is a negative value not possible: %s",
                     cpd.filename, cpd.line_number, entry->name, val);
             log_flush(true);
             exit(EX_CONFIG);
          }
-         dest->n = strtol(val, nullptr, 0);
-         // is the same as dest->u
+         if (entry->type == AT_NUM)
+         {
+            dest->n = strtol(val, nullptr, 0);
+         }
+         else
+         {
+            dest->u = strtoul(val, nullptr, 0);
+         }
          return;
       }
 
-      /* Try to see if it is a variable */
+      // Try to see if it is a variable
       int mult = 1;
       if (*val == '-')
       {
@@ -1807,7 +1848,7 @@ static void convert_value(const option_map_value *entry, const char *val, op_val
       tmp = unc_find_option(val);
       if (tmp == nullptr)
       {
-         fprintf(stderr, "%s:%d\n  for the assigment: unknown option '%s':",
+         fprintf(stderr, "%s:%d\n  for the assignment: unknown option '%s':",
                  cpd.filename, cpd.line_number, val);
          log_flush(true);
          exit(EX_CONFIG);
@@ -1818,17 +1859,35 @@ static void convert_value(const option_map_value *entry, const char *val, op_val
               cpd.line_number, get_argtype_name(entry->type),
               entry->name, get_argtype_name(tmp->type), tmp->name);
 
-      if ((tmp->type == entry->type)
-          || ((tmp->type == AT_UNUM) && (entry->type == AT_NUM))
-          || ((tmp->type == AT_NUM) && (entry->type == AT_UNUM)
-              && (cpd.settings[tmp->id].n * mult) > 0))
+      if (tmp->type == AT_UNUM || tmp->type == AT_NUM)
       {
-         dest->n = cpd.settings[tmp->id].n * mult;
-         // is the same as dest->u
-         return;
+         long tmp_val;
+         if (tmp->type == AT_UNUM)
+         {
+            tmp_val = cpd.settings[tmp->id].u * mult;
+         }
+         else
+         {
+            tmp_val = cpd.settings[tmp->id].n * mult;
+         }
+
+         if (entry->type == AT_NUM)
+         {
+            dest->n = tmp_val;
+            return;
+         }
+         if (tmp_val >= 0) //dest->type == AT_UNUM
+         {
+            dest->u = tmp_val;
+            return;
+         }
+         fprintf(stderr, "%s:%d\n  for the assignment: option '%s' could not have negative value %ld",
+                 cpd.filename, cpd.line_number, entry->name, tmp_val);
+         log_flush(true);
+         exit(EX_CONFIG);
       }
 
-      fprintf(stderr, "%s:%d\n  for the assigment: expected type for %s is %s, got %s\n",
+      fprintf(stderr, "%s:%d\n  for the assignment: expected type for %s is %s, got %s\n",
               cpd.filename, cpd.line_number,
               entry->name, get_argtype_name(entry->type), get_argtype_name(tmp->type));
       log_flush(true);
@@ -1837,17 +1896,17 @@ static void convert_value(const option_map_value *entry, const char *val, op_val
 
    if (entry->type == AT_BOOL)
    {
-      if ((strcasecmp(val, "true") == 0) ||
-          (strcasecmp(val, "t") == 0) ||
-          (strcmp(val, "1") == 0))
+      if (  (strcasecmp(val, "true") == 0)
+         || (strcasecmp(val, "t") == 0)
+         || (strcmp(val, "1") == 0))
       {
          dest->b = true;
          return;
       }
 
-      if ((strcasecmp(val, "false") == 0) ||
-          (strcasecmp(val, "f") == 0) ||
-          (strcmp(val, "0") == 0))
+      if (  (strcasecmp(val, "false") == 0)
+         || (strcasecmp(val, "f") == 0)
+         || (strcmp(val, "0") == 0))
       {
          dest->b = false;
          return;
@@ -1860,13 +1919,14 @@ static void convert_value(const option_map_value *entry, const char *val, op_val
          val++;
       }
 
-      if (((tmp = unc_find_option(val)) != nullptr) && (tmp->type == entry->type))
+      if (  ((tmp = unc_find_option(val)) != nullptr)
+         && tmp->type == entry->type)
       {
          dest->b = cpd.settings[tmp->id].b ? btrue : !btrue;
          return;
       }
 
-      fprintf(stderr, "%s:%d Expected 'True' or 'False' for %s, got %s\n",
+      fprintf(stderr, "convert_value: %s:%d Expected 'True' or 'False' for %s, got '%s'\n",
               cpd.filename, cpd.line_number, entry->name, val);
       log_flush(true);
       cpd.error_count++;
@@ -1880,8 +1940,41 @@ static void convert_value(const option_map_value *entry, const char *val, op_val
       return;
    }
 
-   /* Must be AT_IARF */
+   if (entry->type == AT_TFI)
+   {
+      if (  (strcasecmp(val, "true") == 0)
+         || (strcasecmp(val, "t") == 0)
+         || (strcmp(val, "1") == 0))
+      {
+         dest->tfi = TFI_TRUE;
+         return;
+      }
 
+      if (  (strcasecmp(val, "false") == 0)
+         || (strcasecmp(val, "f") == 0)
+         || (strcmp(val, "0") == 0))
+      {
+         dest->tfi = TFI_FALSE;
+         return;
+      }
+
+      if (  (strcasecmp(val, "ignore") == 0)
+         || (strcasecmp(val, "i") == 0)
+         || (strcmp(val, "2") == 0))
+      {
+         dest->tfi = TFI_IGNORE;
+         return;
+      }
+
+      fprintf(stderr, "%s(%d): %s:%d Expected 'True' or 'False' or 'Ignore' for %s, got '%s'\n",
+              __func__, __LINE__, cpd.filename, cpd.line_number, entry->name, val);
+      log_flush(true);
+      cpd.error_count++;
+      dest->tfi = TFI_FALSE;
+      return;
+   }
+
+   // Must be AT_IARF
    if ((strcasecmp(val, "add") == 0) || (strcasecmp(val, "a") == 0))
    {
       dest->a = AV_ADD;
@@ -1902,12 +1995,13 @@ static void convert_value(const option_map_value *entry, const char *val, op_val
       dest->a = AV_IGNORE;
       return;
    }
-   if (((tmp = unc_find_option(val)) != nullptr) && (tmp->type == entry->type))
+   if (  ((tmp = unc_find_option(val)) != nullptr)
+      && tmp->type == entry->type)
    {
       dest->a = cpd.settings[tmp->id].a;
       return;
    }
-   fprintf(stderr, "%s:%d Expected 'Add', 'Remove', 'Force', or 'Ignore' for %s, got %s\n",
+   fprintf(stderr, "convert_value: %s:%d Expected 'Add', 'Remove', 'Force', or 'Ignore' for %s, got '%s'\n",
            cpd.filename, cpd.line_number, entry->name, val);
    log_flush(true);
    cpd.error_count++;
@@ -1931,57 +2025,58 @@ int set_option_value(const char *name, const char *value)
 bool is_path_relative(const char *path)
 {
 #ifdef WIN32
-   // X:\path\to\file style absolute disk path
-   if (isalpha(path[0]) && (path[1] == ':'))
+   /*
+    * Check for partition labels as indication for an absolute path
+    * X:\path\to\file style absolute disk path
+    */
+   if (isalpha(path[0]) && path[1] == ':')
    {
       return(false);
    }
 
-   // \\server\path\to\file style absolute UNC path
-   if ((path[0] == '\\') && (path[1] == '\\'))
+   /*
+    * Check for double backslashs as indication for a network path
+    * \\server\path\to\file style absolute UNC path
+    */
+   if (path[0] == '\\' && path[1] == '\\')
    {
       return(false);
    }
 #endif
 
-   // /path/to/file style absolute path
+   /*
+    * check fo a slash as indication for a filename with leading path
+    * /path/to/file style absolute path
+    */
    return(path[0] != '/');
 }
 
 
-/**
- * processes a single line string to extract configuration settings
- * increments cpd.line_number and cpd.error_count, modifies configLine parameter
- *
- * @param configLine: single line string that will be processed
- * @param filename: for log messages, file from which the configLine param was
- *                  extracted
- */
 void process_option_line(char *configLine, const char *filename)
 {
    cpd.line_number++;
 
    char *ptr;
-   /* Chop off trailing comments */
+   // Chop off trailing comments
    if ((ptr = strchr(configLine, '#')) != nullptr)
    {
       *ptr = 0;
    }
 
-   /* Blow away the '=' to make things simple */
+   // Blow away the '=' to make things simple
    if ((ptr = strchr(configLine, '=')) != nullptr)
    {
       *ptr = ' ';
    }
 
-   /* Blow away all commas */
+   // Blow away all commas
    ptr = configLine;
    while ((ptr = strchr(ptr, ',')) != nullptr)
    {
       *ptr = ' ';
    }
 
-   /* Split the line */
+   // Split the line
    char *args[32];
    int  argc = Args::SplitLine(configLine, args, ARRAY_SIZE(args) - 1);
    if (argc < 2)
@@ -2055,7 +2150,7 @@ void process_option_line(char *configLine, const char *filename)
 
       if (is_path_relative(args[1]))
       {
-         /* include is a relative path to the current config file */
+         // include is a relative path to the current config file
          unc_text ut = filename;
          ut.resize(path_dirname_len(filename));
          ut.append(args[1]);
@@ -2063,7 +2158,7 @@ void process_option_line(char *configLine, const char *filename)
       }
       else
       {
-         /* include is an absolute Unix path */
+         // include is an absolute Unix path
          UNUSED(load_option_file(args[1]));
       }
 
@@ -2099,7 +2194,7 @@ void process_option_line(char *configLine, const char *filename)
    }
    else
    {
-      /* must be a regular option = value */
+      // must be a regular option = value
       const int id = set_option_value(args[0], args[1]);
       if (id < 0)
       {
@@ -2117,7 +2212,7 @@ int load_option_file(const char *filename)
    cpd.line_number = 0;
 
 #ifdef WIN32
-   /* "/dev/null" not understood by "fopen" in Windows */
+   // "/dev/null" not understood by "fopen" in Windows
    if (strcasecmp(filename, "/dev/null") == 0)
    {
       return(0);
@@ -2134,7 +2229,7 @@ int load_option_file(const char *filename)
       return(-1);
    }
 
-   /* Read in the file line by line */
+   // Read in the file line by line
    char buffer[256];
    while (fgets(buffer, sizeof(buffer), pfile) != nullptr)
    {
@@ -2152,7 +2247,7 @@ int save_option_file_kernel(FILE *pfile, bool withDoc, bool only_not_default)
 
    fprintf(pfile, "# %s\n", UNCRUSTIFY_VERSION);
 
-   /* Print the options by group */
+   // Print the options by group
    for (auto &jt : group_map)
    {
       bool first = true;
@@ -2173,7 +2268,9 @@ int save_option_file_kernel(FILE *pfile, bool withDoc, bool only_not_default)
          }
          // ...................................................................
 
-         if (withDoc && (option->short_desc != nullptr) && (*option->short_desc != 0))
+         if (  withDoc
+            && option->short_desc != nullptr
+            && (*option->short_desc != 0))
          {
             if (first)
             {
@@ -2189,8 +2286,8 @@ int save_option_file_kernel(FILE *pfile, bool withDoc, bool only_not_default)
             for ( ; option->short_desc[idx] != 0; idx++)
             {
                fputc(option->short_desc[idx], pfile);
-               if (option->short_desc[idx] == '\n'
-                   && option->short_desc[idx + 1] != 0)
+               if (  option->short_desc[idx] == '\n'
+                  && option->short_desc[idx + 1] != 0)
                {
                   fputs("# ", pfile);
                }
@@ -2231,14 +2328,10 @@ int save_option_file_kernel(FILE *pfile, bool withDoc, bool only_not_default)
       fprintf(pfile, "%s", DOC_TEXT_END);
    }
 
-   /* Print custom keywords */
-   print_keywords(pfile);
+   print_keywords(pfile);    // Print custom keywords
+   print_defines(pfile);     // Print custom defines
+   print_extensions(pfile);  // Print custom file extensions
 
-   /* Print custom defines */
-   print_defines(pfile);
-
-   /* Print custom file extensions */
-   print_extensions(pfile);
    fprintf(pfile, "# option(s) with 'not default' value: %d\n#\n", count_the_not_default_options);
 
    return(0);
@@ -2253,7 +2346,7 @@ int save_option_file(FILE *pfile, bool withDoc)
 
 void print_options(FILE *pfile)
 {
-   // TODO refactor to be undependent of type positioning
+   // TODO refactor to be independent of type positioning
    const char *names[] =
    {
       "{ False, True }",
@@ -2267,7 +2360,7 @@ void print_options(FILE *pfile)
 
    fprintf(pfile, "# %s\n", UNCRUSTIFY_VERSION);
 
-   /* Print the all out */
+   // Print the all out
    for (auto &jt : group_map)
    {
       fprintf(pfile, "#\n# %s\n#\n\n", jt.second.short_desc);
@@ -2304,39 +2397,35 @@ void print_options(FILE *pfile)
 } // print_options
 
 
-/**
- * Sets non-zero settings defaults
- *
- * TODO: select from various sets? - i.e., K&R, GNU, Linux, Ben
- */
 void set_option_defaults(void)
 {
-   /* set all the default values to zero */
+   // set all the default values to zero
    for (auto &count : cpd.defaults)
    {
       count.n = 0;
    }
 
-   /* the options with non-zero default values */
+   // the options with non-zero default values
    cpd.defaults[UO_align_left_shift].b                                  = true;
    cpd.defaults[UO_cmt_indent_multi].b                                  = true;
    cpd.defaults[UO_cmt_insert_before_inlines].b                         = true;
    cpd.defaults[UO_cmt_multi_check_last].b                              = true;
-   cpd.defaults[UO_cmt_multi_first_len_minimum].n                       = 4;
+   cpd.defaults[UO_cmt_multi_first_len_minimum].u                       = 4;
    cpd.defaults[UO_indent_access_spec].n                                = 1;
    cpd.defaults[UO_indent_align_assign].b                               = true;
    cpd.defaults[UO_indent_columns].u                                    = 8;
    cpd.defaults[UO_indent_cpp_lambda_body].b                            = false;
-   cpd.defaults[UO_indent_ctor_init_leading].n                          = 2;
+   cpd.defaults[UO_indent_ctor_init_leading].u                          = 2;
    cpd.defaults[UO_indent_label].n                                      = 1;
    cpd.defaults[UO_indent_oc_msg_prioritize_first_colon].b              = true;
    cpd.defaults[UO_indent_token_after_brace].b                          = true;
    cpd.defaults[UO_indent_using_block].b                                = true;
    cpd.defaults[UO_indent_with_tabs].u                                  = 1;
+   cpd.defaults[UO_indent_switch_pp].b                                  = true;
    cpd.defaults[UO_input_tab_size].u                                    = 8;
    cpd.defaults[UO_newlines].le                                         = LE_AUTO;
    cpd.defaults[UO_output_tab_size].u                                   = 8;
-   cpd.defaults[UO_pp_indent_count].n                                   = 1;
+   cpd.defaults[UO_pp_indent_count].u                                   = 1;
    cpd.defaults[UO_sp_addr].a                                           = AV_REMOVE;
    cpd.defaults[UO_sp_after_semi].a                                     = AV_ADD;
    cpd.defaults[UO_sp_after_semi_for].a                                 = AV_FORCE;
@@ -2358,10 +2447,14 @@ void set_option_defaults(void)
    cpd.defaults[UO_sp_this_paren].a                                     = AV_REMOVE;
    cpd.defaults[UO_sp_word_brace].a                                     = AV_ADD;
    cpd.defaults[UO_sp_word_brace_ns].a                                  = AV_ADD;
-   cpd.defaults[UO_string_escape_char].n                                = '\\';
+   cpd.defaults[UO_string_escape_char].u                                = '\\';
    cpd.defaults[UO_use_indent_func_call_param].b                        = true;
    cpd.defaults[UO_use_options_overriding_for_qt_macros].b              = true;
-   cpd.defaults[UO_warn_level_tabs_found_in_verbatim_string_literals].n = LWARN;
+   cpd.defaults[UO_warn_level_tabs_found_in_verbatim_string_literals].u = LWARN;
+   cpd.defaults[UO_pp_indent_case].b                                    = true;
+   cpd.defaults[UO_pp_indent_func_def].b                                = true;
+   cpd.defaults[UO_pp_indent_extern].b                                  = true;
+   cpd.defaults[UO_pp_indent_brace].b                                   = true;
 
 #ifdef DEBUG
    // test all the default values if they are in the allowed interval
@@ -2381,8 +2474,7 @@ void set_option_defaults(void)
             log_flush(true);
             exit(EX_SOFTWARE);
          }
-         if ((min_value > 0) &&
-             (default_value < min_value))
+         if (min_value > 0 && default_value < min_value)
          {
             fprintf(stderr, "option '%s' is not correctly set:\n", id.second.name);
             fprintf(stderr, "The default value '%zu' is less than the min value '%zu'.\n",
@@ -2396,7 +2488,7 @@ void set_option_defaults(void)
       {
          int min_value     = value.min_val;
          int max_value     = value.max_val;
-         int default_value = cpd.defaults[id.first].u;
+         int default_value = cpd.defaults[id.first].n;
          if (default_value > max_value)
          {
             fprintf(stderr, "option '%s' is not correctly set:\n", id.second.name);
@@ -2417,7 +2509,7 @@ void set_option_defaults(void)
    }
 #endif // DEBUG
 
-   /* copy all the default values to settings array */
+   // copy all the default values to settings array
    for (unsigned int count = 0; count < UO_option_count; count++)
    {
       cpd.settings[count].a = cpd.defaults[count].a;
@@ -2450,8 +2542,11 @@ string argtype_to_string(argtype_e argtype)
    case AT_STRING:
       return("string");
 
+   case AT_TFI:
+      return("false/true/ignore");
+
    default:
-      fprintf(stderr, "Unknown argtype '%d'\n", argtype);
+      fprintf(stderr, "%s(%d): Unknown argtype '%d'\n", __func__, __LINE__, argtype);
       log_flush(true);
       exit(EX_SOFTWARE);
    }
@@ -2483,8 +2578,11 @@ const char *get_argtype_name(argtype_e argtype)
    case AT_STRING:
       return("AT_STRING");
 
+   case AT_TFI:
+      return("AT_TFI");
+
    default:
-      fprintf(stderr, "Unknown argtype '%d'\n", argtype);
+      fprintf(stderr, "%s(%d): Unknown argtype '%d'\n", __func__, __LINE__, argtype);
       log_flush(true);
       exit(EX_SOFTWARE);
    }
@@ -2499,6 +2597,27 @@ string bool_to_string(bool val)
    }
 
    return("false");
+}
+
+
+string tfi_to_string(TrueFalseIgnore_e val)
+{
+   switch (val)
+   {
+   case TFI_FALSE:
+      return("false");
+
+   case TFI_TRUE:
+      return("true");
+
+   case TFI_IGNORE:
+      return("ignore");
+
+   default:
+      fprintf(stderr, "%s(%d): Unknown argval '%d'\n", __func__, __LINE__, val);
+      log_flush(true);
+      return("");
+   }
 }
 
 
@@ -2519,7 +2638,7 @@ string argval_to_string(argval_t argval)
       return("force");
 
    default:
-      fprintf(stderr, "Unknown argval '%d'\n", argval);
+      fprintf(stderr, "argval_to_string: Unknown argval '%d'\n", argval);
       log_flush(true);
       return("");
    }
@@ -2528,12 +2647,13 @@ string argval_to_string(argval_t argval)
 
 string number_to_string(int number)
 {
-   char buffer[12]; // 11 + 1
+   char buffer[12]; // 11 + 1 termination char
 
    sprintf(buffer, "%d", number);
 
-   /*NOTE: this creates a std:string class from the char array.
-    *      It isn't returning a pointer to stack memory.
+   /*
+    * NOTE: this creates a std:string class from the char array.
+    *       It isn't returning a pointer to stack memory.
     */
    return(buffer);
 }
@@ -2624,8 +2744,11 @@ string op_val_to_string(argtype_e argtype, op_val_t op_val)
    case AT_STRING:
       return(op_val.str != nullptr ? op_val.str : "");
 
+   case AT_TFI:
+      return(tfi_to_string(op_val.tfi));
+
    default:
-      fprintf(stderr, "Unknown argtype '%d'\n", argtype);
+      fprintf(stderr, "%s(%d): Unknown argtype '%d'\n", __func__, __LINE__, argtype);
       log_flush(true);
       exit(EX_SOFTWARE);
    }

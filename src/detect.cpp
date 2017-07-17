@@ -16,10 +16,9 @@
 #include "unc_ctype.h"
 
 
-/**
- * Detect spacing options
- */
+//! Detect spacing options
 static void detect_space_options(void);
+
 
 class sp_votes
 {
@@ -38,7 +37,10 @@ public:
       m_av     = &av;
    }
 
+
+   //! Figure out the result of the vote and maybe update *m_av
    ~sp_votes();
+
 
    void vote(chunk_t *first, chunk_t *second);
 };
@@ -46,8 +48,10 @@ public:
 
 void sp_votes::vote(chunk_t *first, chunk_t *second)
 {
-   if ((first == nullptr) || chunk_is_newline(first) ||
-       (second == nullptr) || chunk_is_newline(second))
+   if (  first == nullptr
+      || chunk_is_newline(first)
+      || second == nullptr
+      || chunk_is_newline(second))
    {
       return;
    }
@@ -68,13 +72,13 @@ void sp_votes::vote(chunk_t *first, chunk_t *second)
 }
 
 
-/**
- * Figure out the result of the vote and maybe update *m_av
- */
+//! Figure out the result of the vote and maybe update *m_av
 sp_votes::~sp_votes()
 {
-   /* no change if no items were added */
-   if ((m_remove == 0) && (m_add == 0) && (m_force == 0))
+   // no change if no items were added
+   if (  m_remove == 0
+      && m_add == 0
+      && m_force == 0)
    {
       return;
    }
@@ -83,17 +87,18 @@ sp_votes::~sp_votes()
    {
       *m_av = (m_force > m_add) ? AV_FORCE : AV_ADD;
    }
-   else if ((m_force == 0) && (m_add == 0))
+   else if (m_force == 0 && m_add == 0)
    {
       *m_av = AV_REMOVE;
    }
    else
    {
-      /* nothing conclusive. do not alter. */
+      // nothing conclusive. do not alter.
    }
 }
 
 
+// generates "vote_sp_xxx" variable name from uncrustify option name "UO_xxx"
 #define SP_VOTE_VAR(x)    sp_votes vote_ ## x(cpd.settings[UO_ ## x].a)
 
 
@@ -211,12 +216,12 @@ static void detect_space_options(void)
       {
          vote_sp_inside_paren.vote(pc, next);
       }
-      if ((chunk_is_paren_open(pc) && chunk_is_paren_open(next)) ||
-          (chunk_is_paren_close(pc) && chunk_is_paren_close(next)))
+      if (  (chunk_is_paren_open(pc) && chunk_is_paren_open(next))
+         || (chunk_is_paren_close(pc) && chunk_is_paren_close(next)))
       {
          vote_sp_paren_paren.vote(pc, next);
       }
-      if (chunk_is_paren_close(pc) && (next->type == CT_BRACE_OPEN))
+      if (chunk_is_paren_close(pc) && next->type == CT_BRACE_OPEN)
       {
          vote_sp_paren_brace.vote(pc, next);
       }
@@ -251,8 +256,8 @@ static void detect_space_options(void)
          }
          vote_sp_after_byref.vote(pc, next);
       }
-      if ((pc->type != CT_PTR_TYPE) &&
-          ((prev->type == CT_QUALIFIER) || (prev->type == CT_TYPE)))
+      if (  pc->type != CT_PTR_TYPE
+         && (prev->type == CT_QUALIFIER || prev->type == CT_TYPE))
       {
          vote_sp_after_type.vote(prev, pc);
       }
@@ -275,7 +280,7 @@ static void detect_space_options(void)
          {
             vote_sp_angle_paren.vote(prev, pc);
          }
-         else if ((next->type == CT_WORD) || CharTable::IsKw1(next->str[0]))
+         else if (next->type == CT_WORD || CharTable::IsKw1(next->str[0]))
          {
             vote_sp_angle_word.vote(prev, pc);
          }
@@ -308,12 +313,12 @@ static void detect_space_options(void)
          {
             if (prev->type == CT_SPAREN_OPEN)
             {
-               /* empty, ie for (;;) */
+               // empty, ie for (;;)
                vote_sp_before_semi_for_empty.vote(prev, pc);
             }
             else if (next->type == CT_SPAREN_CLOSE)
             {
-               /* empty, ie for (;;) */
+               // empty, ie for (;;)
                vote_sp_after_semi_for_empty.vote(pc, next);
             }
             else if (prev->type != CT_SEMICOLON)

@@ -15,9 +15,7 @@
 #include "uncrustify.h"
 
 
-/**
- * Add an open paren after first and add a close paren before the last
- */
+//! Add an open parenthesis after first and add a close parenthesis before the last
 static void add_parens_between(chunk_t *first, chunk_t *last);
 
 
@@ -51,15 +49,15 @@ void do_parens(void)
       chunk_t *pc = chunk_get_head();
       while ((pc = chunk_get_next_ncnl(pc)) != nullptr)
       {
-         if ((pc->type != CT_SPAREN_OPEN) ||
-             ((pc->parent_type != CT_IF) &&
-              (pc->parent_type != CT_ELSEIF) &&
-              (pc->parent_type != CT_SWITCH)))
+         if (  pc->type != CT_SPAREN_OPEN
+            || (  pc->parent_type != CT_IF
+               && pc->parent_type != CT_ELSEIF
+               && pc->parent_type != CT_SWITCH))
          {
             continue;
          }
 
-         /* Grab the close sparen */
+         // Grab the close sparen
          chunk_t *pclose = chunk_get_next_type(pc, CT_SPAREN_CLOSE, pc->level, scope_e::PREPROC);
          if (pclose != nullptr)
          {
@@ -80,7 +78,7 @@ static void add_parens_between(chunk_t *first, chunk_t *last)
            first->text(), first->level,
            last->text(), last->level);
 
-   /* Don't do anything if we have a bad sequence, ie "&& )" */
+   // Don't do anything if we have a bad sequence, ie "&& )"
    chunk_t *first_n = chunk_get_next_ncnl(first);
    if (first_n == last)
    {
@@ -131,7 +129,7 @@ static void check_bool_parens(chunk_t *popen, chunk_t *pclose, int nest)
            popen->level);
 
    chunk_t *pc = popen;
-   while (((pc = chunk_get_next_ncnl(pc)) != nullptr) && (pc != pclose))
+   while ((pc = chunk_get_next_ncnl(pc)) != nullptr && pc != pclose)
    {
       if (pc->flags & PCF_IN_PREPROC)
       {
@@ -141,10 +139,10 @@ static void check_bool_parens(chunk_t *popen, chunk_t *pclose, int nest)
          return;
       }
 
-      if ((pc->type == CT_BOOL) ||
-          (pc->type == CT_QUESTION) ||
-          (pc->type == CT_COND_COLON) ||
-          (pc->type == CT_COMMA))
+      if (  pc->type == CT_BOOL
+         || pc->type == CT_QUESTION
+         || pc->type == CT_COND_COLON
+         || pc->type == CT_COMMA)
       {
          LOG_FMT(LPARADD2, " -- %s [%s] at line %zu col %zu, level %zu\n",
                  get_token_name(pc->type),
@@ -171,16 +169,16 @@ static void check_bool_parens(chunk_t *popen, chunk_t *pclose, int nest)
             pc = next;
          }
       }
-      else if ((pc->type == CT_BRACE_OPEN) ||
-               (pc->type == CT_SQUARE_OPEN) ||
-               (pc->type == CT_ANGLE_OPEN))
+      else if (  pc->type == CT_BRACE_OPEN
+              || pc->type == CT_SQUARE_OPEN
+              || pc->type == CT_ANGLE_OPEN)
       {
-         /* Skip [], {}, and <> */
+         // Skip [], {}, and <>
          pc = chunk_skip_to_match(pc);
       }
    }
 
-   if (hit_compare && (ref != popen))
+   if (hit_compare && ref != popen)
    {
       add_parens_between(ref, pclose);
    }

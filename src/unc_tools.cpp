@@ -11,54 +11,58 @@
 #include "uncrustify.h"
 #include "args.h"
 
-// examples:
-// prot_the_line(__LINE__, pc->orig_line);
-// prot_the_line(__LINE__, 6);
-// examine_Data(__func__, __LINE__, n);
-// log_pcf_flags(LSYS, pc->flags);
-
 
 // protocol of the line
+// examples:
+//   prot_the_line(__LINE__, pc->orig_line);
+//   prot_the_line(__LINE__, 6);
+// log_pcf_flags(LSYS, pc->flags);
 void prot_the_line(int theLine, unsigned int actual_line)
 {
-   LOG_FMT(LGUY, "Prot_the_line:(%d) \n", theLine);
+   LOG_FMT(LGUY, "Prot_the_line:(%d)\n", theLine);
    for (chunk_t *pc = chunk_get_head(); pc != nullptr; pc = pc->next)
    {
       if (pc->orig_line == actual_line)
       {
-         LOG_FMT(LGUY, "(%d) orig_line=%d, ", theLine, actual_line);
+         LOG_FMT(LGUY, " orig_line=%d, ", actual_line);
          if (pc->type == CT_VBRACE_OPEN)
          {
-            LOG_FMT(LGUY, "<VBRACE_OPEN>\n");
+            LOG_FMT(LGUY, "<VBRACE_OPEN>, ");
          }
          else if (pc->type == CT_NEWLINE)
          {
-            LOG_FMT(LGUY, "<NL>(%zu)\n", pc->nl_count);
+            LOG_FMT(LGUY, "<NL>(%zu), ", pc->nl_count);
          }
          else if (pc->type == CT_VBRACE_CLOSE)
          {
-            LOG_FMT(LGUY, "<CT_VBRACE_CLOSE>\n");
+            LOG_FMT(LGUY, "<CT_VBRACE_CLOSE>, ");
          }
          else if (pc->type == CT_VBRACE_OPEN)
          {
-            LOG_FMT(LGUY, "<CT_VBRACE_OPEN>\n");
+            LOG_FMT(LGUY, "<CT_VBRACE_OPEN>, ");
          }
          else if (pc->type == CT_SPACE)
          {
-            LOG_FMT(LGUY, "<CT_SPACE>\n");
+            LOG_FMT(LGUY, "<CT_SPACE>, ");
          }
          else
          {
-            LOG_FMT(LGUY, "text() %s, type %s, orig_col=%zu, column=%zu\n",
-                    pc->text(), get_token_name(pc->type), pc->orig_col, pc->column);
+            LOG_FMT(LGUY, "text() %s, type %s, parent_type %s, orig_col=%zu, ",
+                    pc->text(), get_token_name(pc->type), get_token_name(pc->parent_type), pc->orig_col);
          }
+         LOG_FMT(LGUY, "pc->flags:");
+         log_pcf_flags(LGUY, pc->flags);
       }
    }
    LOG_FMT(LGUY, "\n");
 }
 
 
-/* \todo examine_Data seems not to be used, is it still required? */
+// TODO: examine_Data seems not to be used, is it still required?
+
+
+// examples:
+//   examine_Data(__func__, __LINE__, n);
 void examine_Data(const char *func_name, int theLine, int what)
 {
    LOG_FMT(LGUY, "\n%s:", func_name);
@@ -69,8 +73,7 @@ void examine_Data(const char *func_name, int theLine, int what)
    case 1:
       for (pc = chunk_get_head(); pc != nullptr; pc = pc->next)
       {
-         if ((pc->type == CT_SQUARE_CLOSE) ||
-             (pc->type == CT_TSQUARE))
+         if (pc->type == CT_SQUARE_CLOSE || pc->type == CT_TSQUARE)
          {
             LOG_FMT(LGUY, "\n");
             LOG_FMT(LGUY, "1:(%d),", theLine);
@@ -136,7 +139,6 @@ void examine_Data(const char *func_name, int theLine, int what)
 }    // examine_Data
 
 
-// dump the chunk list to a file
 void dump_out(unsigned int type)
 {
    char dumpFileName[300];
@@ -160,7 +162,7 @@ void dump_out(unsigned int type)
          fprintf(D_file, "  orig_col %zu\n", pc->orig_col);
          fprintf(D_file, "  orig_col_end %zu\n", pc->orig_col_end);
          fprintf(D_file, (pc->orig_prev_sp != 0) ? "  orig_prev_sp %u\n" : "", pc->orig_prev_sp);
-         fprintf(D_file, (pc->flags != 0) ? "  flags %zu\n" : "", pc->flags);
+         fprintf(D_file, (pc->flags != 0) ? "  flags %" PRIu64 "\n" : "", pc->flags);
          fprintf(D_file, (pc->column != 0) ? "  column %zu\n" : "", pc->column);
          fprintf(D_file, (pc->column_indent != 0) ? "  column_indent %zu\n" : "", pc->column_indent);
          fprintf(D_file, (pc->nl_count != 0) ? "  nl_count %zu\n" : "", pc->nl_count);
@@ -178,7 +180,6 @@ void dump_out(unsigned int type)
 }
 
 
-// create chunk list from a file
 void dump_in(unsigned int type)
 {
    char    buffer[256];

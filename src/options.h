@@ -17,91 +17,116 @@
 #include <map>
 #include <string>
 
+/**
+ * abbreviations used
+ *
+ * av     = argument values
+ * bal    = balance, balanced
+ * pstart = pointer star
+ * rel    = relative
+ */
+
+
 enum argtype_e
 {
-   AT_BOOL,    /**< true / false */
-   AT_IARF,    /**< Ignore / Add / Remove / Force */
-   AT_NUM,     /**< Number */
-   AT_LINE,    /**< Line Endings */
-   AT_POS,     /**< start/end or Trail/Lead */
-   AT_STRING,  /**< string value */
-   AT_UNUM,    /**< unsigned Number */
+   AT_BOOL,    //! true / false
+   AT_IARF,    //! Ignore / Add / Remove / Force
+   AT_NUM,     //! Number
+   AT_LINE,    //! Line Endings
+   AT_POS,     //! start/end or Trail/Lead
+   AT_STRING,  //! string value
+   AT_UNUM,    //! unsigned Number
+   AT_TFI,     //! false / true / ignore
 };
 
-/** Arg values - these are bit fields*/
+//! Arg values - these are bit fields
 enum argval_t
 {
-   AV_IGNORE      = 0,
-   AV_ADD         = 1,
-   AV_REMOVE      = 2,
-   AV_FORCE       = 3, /**< remove + add */
-   AV_NOT_DEFINED = 4  /* to be used with QT, SIGNAL SLOT macros */
+   AV_IGNORE      = 0,                    //! option ignores a given feature
+   AV_ADD         = (1u << 0),            //! option adds a given feature
+   AV_REMOVE      = (1u << 1),            //! option removes a given feature
+   AV_FORCE       = (AV_ADD | AV_REMOVE), //! option forces the usage of a given feature
+   AV_NOT_DEFINED = (1u << 2)             //! to be used with QT, SIGNAL SLOT macros
 };
 
-/** Line endings */
+//! Line endings
 enum lineends_e
 {
-   LE_LF,      /* "\n"   */
-   LE_CRLF,    /* "\r\n" */
-   LE_CR,      /* "\r"   */
-
-   LE_AUTO,    /* keep last */
+   LE_LF,      //! "\n"   typically used on Unix/Linux system
+   LE_CRLF,    //! "\r\n" typically used on Windows systems
+   LE_CR,      //! "\r"   carriage return without newline
+   LE_AUTO     //! keep last
 };
 
-/** Token position - these are bit fields */
+//! Token position - these are bit fields
 enum tokenpos_e
 {
-   TP_IGNORE      = 0,     /* don't change it */
-   TP_BREAK       = 1,     /* add a newline before or after the if not present */
-   TP_FORCE       = 2,     /* force a newline on one side and not the other */
-   TP_LEAD        = 4,     /* at the start of a line or leading if wrapped line */
+   TP_IGNORE      = 0,                        //! don't change it
+   TP_BREAK       = 1,                        //! add a newline before or after the if not present
+   TP_FORCE       = 2,                        //! force a newline on one side and not the other
+   TP_LEAD        = 4,                        //! at the start of a line or leading if wrapped line
    TP_LEAD_BREAK  = (TP_LEAD | TP_BREAK),
    TP_LEAD_FORCE  = (TP_LEAD | TP_FORCE),
-   TP_TRAIL       = 8,     /* at the end of a line or trailing if wrapped line */
+   TP_TRAIL       = 8,                        //! at the end of a line or trailing if wrapped line
    TP_TRAIL_BREAK = (TP_TRAIL | TP_BREAK),
    TP_TRAIL_FORCE = (TP_TRAIL | TP_FORCE),
-   TP_JOIN        = 16,    /* remove newlines on both sides */
+   TP_JOIN        = 16,                       //! remove newlines on both sides
 };
 
+//! True, False or Ignore
+enum TrueFalseIgnore_e
+{
+   TFI_FALSE  = false,                    //! false
+   TFI_TRUE   = true,                     //! true
+   TFI_IGNORE = 2,                        //! ignore
+};
+
+/**
+ * Uncrustify options are configured with a parameter of this type.
+ * Depending on the option the meaning (and thus type) of the
+ * parameter varies. Therefore we use a union that provides all
+ * possible types.
+ */
 union op_val_t
 {
-   argval_t   a;
-   int        n;
-   bool       b;
-   lineends_e le;
-   tokenpos_e tp;
-   const char *str;
-   size_t     u;
+   argval_t          a;    //! ignore / add / remove / force
+   int               n;    //! a signed number
+   bool              b;    //! a bool flag
+   lineends_e        le;   //! line ending type
+   tokenpos_e        tp;   //! token position type
+   const char        *str; //! a string
+   size_t            u;    //! an unsigned number
+   TrueFalseIgnore_e tfi;  //! false / true / ignore
 };
 
-/** Groups for options
+/**
+ * list of all group identifiers that are used to group uncrustify options
  * The order here must be the same as in the file options.cpp
  */
 enum uncrustify_groups
 {
-   UG_general,
-   UG_space,
-   UG_indent,
-   UG_newline,
-   UG_blankline,
-   UG_position,
-   UG_linesplit,
-   UG_align,
-   UG_comment,
-   UG_codemodify,
-   UG_preprocessor,
-   UG_sort_includes,
+   UG_general,        //! group for options that do not fit into other groups
+   UG_space,          //! group for options that modify spaces
+   UG_indent,         //! group for options that handle indentation
+   UG_newline,        //! group for options that modify newlines
+   UG_blankline,      //! group for options that modify blank lines
+   UG_position,       //! group for options that modify positions
+   UG_linesplit,      //! group for options that split lines
+   UG_align,          //! group for alignment options
+   UG_comment,        //! group for comment related options
+   UG_codemodify,     //! group for options that modify the code
+   UG_preprocessor,   //! group for all preprocessor related options
+   UG_sort_includes,  //! group for all sorting options
    UG_Use_Ext,
    UG_warnlevels,
    UG_group_count
 };
 
-/**
- * Keep this grouped by functionality
- * The order here must be the same as in the file options.cpp
- */
+//! lists all options that uncrustify has
 enum uncrustify_options
 {
+   // Keep this grouped by functionality
+
    // group: UG_general, "General options"                                         0
    UO_newlines,                 // Set to AUTO, LF, CRLF, or CR
 
@@ -366,6 +391,7 @@ enum uncrustify_options
    UO_indent_sing_line_comments,            // indent single line ('//') comments on lines before code
    UO_indent_relative_single_line_comments, // indent single line ('//') comments after code
    UO_indent_switch_case,                   // spaces to indent case from switch
+   UO_indent_switch_pp,                     // whether to indent preproccesor statements inside of switch statements
    UO_indent_case_shift,                    // spaces to shift the line with the 'case'
    UO_indent_case_brace,                    // spaces to indent '{' from case (usually 0 or indent_columns)
    UO_indent_col1_comment,                  // indent comments in column 1
@@ -487,8 +513,10 @@ enum uncrustify_options
                                       // Controls the newline after '::' in 'void A::f() { }'
    UO_nl_func_proto_type_name,        // nl_func_type_name, but for prottypes
    UO_nl_func_paren,                  // newline between function and open paren
+   UO_nl_func_paren_empty,            // Overrides nl_func_paren for functions with no parameters
    UO_nl_func_def_paren,              // Add or remove newline between a function name and
                                       // the opening '(' in the definition
+   UO_nl_func_def_paren_empty,        // Overrides nl_func_def_paren for functions with no parameters
    UO_nl_func_decl_start,             // newline after the '(' in a function decl
    UO_nl_func_def_start,              // newline after the '(' in a function def
    UO_nl_func_decl_start_single,      // Overrides nl_func_decl_start when there is only one parameter
@@ -811,6 +839,14 @@ enum uncrustify_options
    UO_pp_if_indent_code,     //
    UO_pp_define_at_level,    // indent #define at brace level
    UO_pp_ignore_define_body, // "Whether to ignore the '#define' body while formatting."
+   UO_pp_indent_case,        // Whether to indent case statements between #if, #else, and #endif
+                             // Only applies to the indent of the preprocesser that the case statements directly inside of
+   UO_pp_indent_func_def,    // Whether to indent whole function definitions between #if, #else, and #endif
+                             // Only applies to the indent of the preprocesser that the function definition is directly inside of
+   UO_pp_indent_extern,      // Whether to indent extern C blocks between #if, #else, and #endif
+                             // Only applies to the indent of the preprocesser that the extern block is directly inside of
+   UO_pp_indent_brace,       // Whether to indent braces directly inside #if, #else, and #endif
+                             // Only applies to the indent of the preprocesser that the braces are directly inside of
 
    // group: UG_sort_includes, "Sort includes options"                                              11
    UO_include_category_0,  //
@@ -876,13 +912,134 @@ struct option_map_value
 };
 
 
+const char *get_argtype_name(argtype_e argtype);
+
+
+/**
+ * @brief defines a new group of uncrustify options
+ *
+ * The current group is stored as global variable which
+ * will be used whenever a new option is added.
+ */
+void unc_begin_group(uncrustify_groups id, const char *short_desc, const char *long_desc = NULL);
+
+
+const option_map_value *unc_find_option(const char *name);
+
+
+//! Add all uncrustify options to the global option list
+void register_options(void);
+
+
+/**
+ * Sets non-zero settings defaults
+ *
+ * TODO: select from various sets? - i.e., K&R, GNU, Linux, Ben
+ */
+void set_option_defaults(void);
+
+
+/**
+ * processes a single line string to extract configuration settings
+ * increments cpd.line_number and cpd.error_count, modifies configLine parameter
+ *
+ * @param configLine  single line string that will be processed
+ * @param filename    for log messages, file from which the configLine param
+ *                    was extracted
+ */
+void process_option_line(char *configLine, const char *filename);
+
+
+int load_option_file(const char *filename);
+
+
+int save_option_file(FILE *pfile, bool withDoc);
+
+
+/**
+ * save the used options into a text file
+ *
+ * @param pfile             file to print into
+ * @param withDoc           also print description
+ * @param only_not_default  print only options with non default value
+ */
+int save_option_file_kernel(FILE *pfile, bool withDoc, bool only_not_default);
+
+
+/**
+ * @return >= 0  entry was found
+ * @return   -1  entry was not found
+ */
+int set_option_value(const char *name, const char *value);
+
+
+/**
+ * check if a path/filename uses a relative or absolute path
+ *
+ * @retval false path is an absolute one
+ * @retval true  path is a  relative one
+ */
+bool is_path_relative(const char *path);
+
+
+const group_map_value *get_group_name(size_t ug);
+
+
+const option_map_value *get_option_name(uncrustify_options uo);
+
+
+void print_options(FILE *pfile);
+
+/**
+ * convert a argument type to a string
+ *
+ * @param val  argument type to convert
+ */
 string argtype_to_string(argtype_e argtype);
+
+/**
+ * convert a boolean to a string
+ *
+ * @param val  boolean to convert
+ */
 string bool_to_string(bool val);
+
+/**
+ * convert an argument value to a string
+ *
+ * @param val  argument value to convert
+ */
 string argval_to_string(argval_t argval);
+
+/**
+ * convert an integer number to a string
+ *
+ * @param val  integer number to convert
+ */
 string number_to_string(int number);
+
+/**
+ * convert a line ending type to a string
+ *
+ * @param val  line ending type to convert
+ */
 string lineends_to_string(lineends_e linends);
+
+/**
+ * convert a token to a string
+ *
+ * @param val  token to convert
+ */
 string tokenpos_to_string(tokenpos_e tokenpos);
+
+/**
+ * convert an argument of a given type to a string
+ *
+ * @param argtype   type of argument
+ * @param op_val_t  value of argument
+ */
 string op_val_to_string(argtype_e argtype, op_val_t op_val);
+
 
 typedef map<uncrustify_options, option_map_value>::iterator   option_name_map_it;
 typedef map<uncrustify_groups, group_map_value>::iterator     group_map_it;

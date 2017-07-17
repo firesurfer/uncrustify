@@ -405,7 +405,7 @@ int _loadConfig(intptr_t _cfg)
       return(EXIT_FAILURE);
    }
 
-   /* This relies on cpd.filename being the config file name */
+   // This relies on cpd.filename being the config file name
    load_header_files();
 
    LOG_FMT(LSYS, "finished loading config\n");
@@ -477,7 +477,7 @@ intptr_t _uncrustify(intptr_t _file, lang_flag_e langIDX, bool frag, bool defer)
       return(0);
    }
 
-   /* Done reading from stdin */
+   // Done reading from stdin
    LOG_FMT(LSYS, "Parsing: %d bytes (%d chars) from stdin as language %s\n",
            (int)fm.raw.size(), (int)fm.data.size(),
            language_name_from_flags(cpd.lang_flags));
@@ -504,10 +504,10 @@ intptr_t _uncrustify(intptr_t _file, lang_flag_e langIDX, bool frag, bool defer)
    // need to accept a stream, FILE or a char array pointer in which the output
    // will be stored.
    // Another option would be to check, inside the uncrustify_file function,
-   // if the current filename sting matches stdout or stderr and use those as
+   // if the current filename string matches stdout or stderr and use those as
    // output locations. This is the easier fix but the debug info in the
    // browsers console is littered with other unneeded text.
-   // Finally, the ugliest solution, would be also possible to re route
+   // Finally, the ugliest solution, would be also possible to re-route
    // either stdout or stderr inside the Module var of emscripten to a js
    // function which passes the debug output into a dedicated output js target.
    // This therefore would introduce the dependency on the user to always have
@@ -641,6 +641,7 @@ string option_map_value_lDesc(const option_map_value &o)
 
 EMSCRIPTEN_BINDINGS(MainModule)
 {
+   // region enum bindings
    enum_<uncrustify_options>(STRINGIFY(uncrustify_options))
       .value(STRINGIFY(UO_newlines), UO_newlines)
       .value(STRINGIFY(UO_input_tab_size), UO_input_tab_size)
@@ -885,6 +886,7 @@ EMSCRIPTEN_BINDINGS(MainModule)
       .value(STRINGIFY(UO_indent_sing_line_comments), UO_indent_sing_line_comments)
       .value(STRINGIFY(UO_indent_relative_single_line_comments), UO_indent_relative_single_line_comments)
       .value(STRINGIFY(UO_indent_switch_case), UO_indent_switch_case)
+      .value(STRINGIFY(UO_indent_switch_pp), UO_indent_switch_pp)
       .value(STRINGIFY(UO_indent_case_shift), UO_indent_case_shift)
       .value(STRINGIFY(UO_indent_case_brace), UO_indent_case_brace)
       .value(STRINGIFY(UO_indent_col1_comment), UO_indent_col1_comment)
@@ -990,7 +992,9 @@ EMSCRIPTEN_BINDINGS(MainModule)
       .value(STRINGIFY(UO_nl_func_scope_name), UO_nl_func_scope_name)
       .value(STRINGIFY(UO_nl_func_proto_type_name), UO_nl_func_proto_type_name)
       .value(STRINGIFY(UO_nl_func_paren), UO_nl_func_paren)
+      .value(STRINGIFY(UO_nl_func_paren_empty), UO_nl_func_paren_empty)
       .value(STRINGIFY(UO_nl_func_def_paren), UO_nl_func_def_paren)
+      .value(STRINGIFY(UO_nl_func_def_paren_empty), UO_nl_func_def_paren_empty)
       .value(STRINGIFY(UO_nl_func_decl_start), UO_nl_func_decl_start)
       .value(STRINGIFY(UO_nl_func_def_start), UO_nl_func_def_start)
       .value(STRINGIFY(UO_nl_func_decl_start_single), UO_nl_func_decl_start_single)
@@ -1225,6 +1229,10 @@ EMSCRIPTEN_BINDINGS(MainModule)
       .value(STRINGIFY(UO_pp_if_indent_code), UO_pp_if_indent_code)
       .value(STRINGIFY(UO_pp_define_at_level), UO_pp_define_at_level)
       .value(STRINGIFY(UO_pp_ignore_define_body), UO_pp_ignore_define_body)
+      .value(STRINGIFY(UO_pp_indent_case), UO_pp_indent_case)
+      .value(STRINGIFY(UO_pp_indent_func_def), UO_pp_indent_func_def)
+      .value(STRINGIFY(UO_pp_indent_extern), UO_pp_indent_extern)
+      .value(STRINGIFY(UO_pp_indent_brace), UO_pp_indent_brace)
       .value(STRINGIFY(UO_include_category_0), UO_include_category_0)
       .value(STRINGIFY(UO_include_category_1), UO_include_category_1)
       .value(STRINGIFY(UO_include_category_2), UO_include_category_2)
@@ -1653,6 +1661,8 @@ EMSCRIPTEN_BINDINGS(MainModule)
       .value(STRINGIFY(LANG_ALL), LANG_ALL)
       .value(STRINGIFY(FLAG_DIG), FLAG_DIG)
       .value(STRINGIFY(FLAG_PP), FLAG_PP);
+
+   // endregion enum bindings
 
 
    class_<option_map_value>(STRINGIFY(option_map_value))

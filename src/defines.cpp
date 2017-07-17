@@ -28,13 +28,13 @@ defmap defines;
 
 void add_define(const char *tag, const char *value)
 {
-   if ((tag == nullptr) || (*tag == 0))
+   if (tag == nullptr || *tag == 0)
    {
       return;
    }
    value = value ? value : "";
 
-   /* Try to update an existing entry first */
+   // Try to update an existing entry first
    defmap::iterator it = defines.find(tag);
    if (it != defines.end())
    {
@@ -43,7 +43,7 @@ void add_define(const char *tag, const char *value)
       return;
    }
 
-   /* Insert a new entry */
+   // Insert a new entry
    defines.insert(defmap::value_type(tag, value));
    LOG_FMT(LDEFVAL, "%s: added '%s' = '%s'\n", __func__, tag, value);
 }
@@ -68,11 +68,11 @@ int load_define_file(const char *filename)
    {
       line_no++;
 
-      /* remove comments */
+      // remove comments
       char *ptr;
       if ((ptr = strchr(buf, '#')) != nullptr)
       {
-         *ptr = 0;
+         *ptr = 0; // set string end where comment begins
       }
 
       int argc = Args::SplitLine(buf, args, ARRAY_SIZE(args) - 1);
@@ -80,7 +80,7 @@ int load_define_file(const char *filename)
 
       if (argc > 0)
       {
-         if ((argc <= 2) && CharTable::IsKw1(*args[0]))
+         if (argc <= 2 && CharTable::IsKw1(*args[0]))
          {
             LOG_FMT(LDEFVAL, "%s: line %zu - %s\n", filename, line_no, args[0]);
             add_define(args[0], args[1]);
