@@ -9,7 +9,7 @@ include(CheckIncludeFileCXX)
 include(CheckSymbolExists)
 include(CheckCXXSymbolExists)
 include(CheckTypeSize)
-include(CTest)
+enable_testing()
 
 #
 # Check compiler flags
